@@ -10,7 +10,7 @@
 using namespace metal;
 
 [[ stitchable ]] half4 marqueeEffect(float2 position, SwiftUI::Layer layer, float4 bounds) {
-	const float threshold = 15.0;
+	const float threshold = 25.0;
 
 	half4 current_color = layer.sample(position);
 	if ((position.x > threshold && position.x < (bounds.z - threshold))) {
