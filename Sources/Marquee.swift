@@ -110,9 +110,15 @@ private struct RenderedView: Equatable {
 
 public struct Marquee<Content: View>: View {
 	@Environment(\.displayScale) private var displayScale
-	public var speed: Double = 80
-	public var spacing: Double = 50
+	public var speed: Double
+	public var spacing: Double
 	@ViewBuilder public var content: () -> Content
+
+	public init(speed: Double = 80, spacing: Double = 50, @ViewBuilder _ content: @escaping () -> Content) {
+		self.speed = speed
+		self.spacing = spacing
+		self.content = content
+	}
 
 	public var body: some View {
 		MarqueeContainer(speed: speed, spacing: spacing, view: RenderedView(displayScale: displayScale) {
