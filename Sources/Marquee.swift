@@ -83,7 +83,7 @@ private struct MarqueeContainer: View {
 			} else {
 				view.image
 			}
-		}.layerEffect(ShaderLibrary.marqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.width > size.width)
+		}//.layerEffect(ShaderLibrary.marqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.width > size.width)
 		 .onGeometryChange(for: CGSize.self) { proxy in
 			 proxy.size
 		 } action: { newValue in
