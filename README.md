@@ -17,10 +17,10 @@ There are things this doesn't have that other implementations do have as well:
 
 Add this repository (https://github.com/porchdog/Marquee) as a Swift Package Dependency to your project. You find the option in Xcode unter "File > Swift Packages > Add Package Dependency...".
 
+```
 import SwiftUI
 import Marquee
 
-```
 struct ContentView: View {    
     var body: some View {
      Marquee {
