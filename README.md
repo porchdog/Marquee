@@ -26,8 +26,7 @@ struct ContentView: View {
      Marquee {
        Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
          .font(.system(size: 24))
-				 .foregroundStyle(Color.black)
-				 .lineLimit(1)
+         .lineLimit(1)
      }
    }
 }
