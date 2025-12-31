@@ -13,3 +13,22 @@ There are things this doesn't have that other implementations do have as well:
 
 * Animation curve. This one is strictly linear.
 
+# Usage
+
+Add this repository (https://github.com/porchdog/Marquee) as a Swift Package Dependency to your project. You find the option in Xcode unter "File > Swift Packages > Add Package Dependency...".
+
+import SwiftUI
+import Marquee
+
+```
+struct ContentView: View {    
+    var body: some View {
+     Marquee {
+       Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+         .font(.system(size: 24))
+				 .foregroundStyle(Color.black)
+				 .lineLimit(1)
+     }
+   }
+}
+```
