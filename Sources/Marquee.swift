@@ -121,7 +121,8 @@ private struct HorizontalMarqueeContainer: View {
 			} else {
 				view.image
 			}
-		}.layerEffect(MarqueeShaderLibrary.marqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.width > size.width)
+		}.ignoresSafeArea()
+		 .layerEffect(MarqueeShaderLibrary.marqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.width > size.width)
 		 .onGeometryChange(for: CGSize.self) { proxy in
 			 proxy.size
 		 } action: { newValue in
