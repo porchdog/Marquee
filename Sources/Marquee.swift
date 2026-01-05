@@ -53,11 +53,11 @@ private struct VerticalMarqueeLayout: Layout {
 
 		// If something asked for this to be a certain size, then that's the size it's going to be
 		if let width = proposal.width, let height = proposal.height {
-			print("proposal width: \(width), proposal height: \(height)")
+			print("marquee proposal width: \(width), proposal height: \(height)")
 			return CGSize(width: width, height: height)
 		} else {
 			let size = subviews[0].sizeThatFits(.unspecified)
-			print("sizeThatFits width: \(size.width), height: \(size.height)")
+			print("marquee sizeThatFits width: \(size.width), height: \(size.height)")
 			return CGSize(width: size.width, height: size.height)
 		}
 	}
@@ -72,10 +72,10 @@ private struct VerticalMarqueeLayout: Layout {
 			fatalError("Only works with a single subview")
 		}
 
-		print("proposal \(proposal)")
+		print("marquee proposal \(proposal)")
 
 		// Position the subview
-		subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading, proposal: .unspecified)
+		subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading, proposal: proposal)
 	}
 }
 
