@@ -156,7 +156,6 @@ private struct RenderedView: Equatable {
 			print("Unable to render image from content")
 			return nil
 		}
-		print("rendering")
 		self.image = Image(decorative: cgImage, scale: displayScale)
 		self.height = CGFloat(cgImage.height) / displayScale
 		self.width = CGFloat(cgImage.width) / displayScale
