@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-private struct HorizontalMarqueeLayout: Layout {
+private struct MarqueeLayout: Layout {
 	func sizeThatFits(
 		proposal: ProposedViewSize,
 		subviews: Subviews,
@@ -18,12 +18,14 @@ private struct HorizontalMarqueeLayout: Layout {
 		}
 
 		// If something asked for this to be a certain size, then that's the size it's going to be
-		if let width = proposal.width, let height = proposal.height {
-			return CGSize(width: width, height: height)
-		} else {
-			let size = subviews[0].sizeThatFits(.unspecified)
-			return CGSize(width: size.width, height: size.height)
+		var size = subviews[0].sizeThatFits(.unspecified)
+		if let width = proposal.width, width < size.width {
+			size.width = width
 		}
+		if let height = proposal.height, height < size.height {
+			size.height = height
+		}
+		return size
 	}
 
 	func placeSubviews(
@@ -36,46 +38,7 @@ private struct HorizontalMarqueeLayout: Layout {
 			fatalError("Only works with a single subview")
 		}
 
-		// Position the subview
-		subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading, proposal: .unspecified)
-	}
-}
-
-private struct VerticalMarqueeLayout: Layout {
-	func sizeThatFits(
-		proposal: ProposedViewSize,
-		subviews: Subviews,
-		cache: inout ()
-	) -> CGSize {
-		if subviews.count != 1 {
-			return .zero
-		}
-
-		// If something asked for this to be a certain size, then that's the size it's going to be
-		if let width = proposal.width, let height = proposal.height {
-			print("marquee proposal width: \(width), proposal height: \(height)")
-			return CGSize(width: width, height: height)
-		} else {
-			let size = subviews[0].sizeThatFits(.unspecified)
-			print("marquee sizeThatFits width: \(size.width), height: \(size.height)")
-			return CGSize(width: size.width, height: size.height)
-		}
-	}
-
-	func placeSubviews(
-		in bounds: CGRect,
-		proposal: ProposedViewSize,
-		subviews: Subviews,
-		cache: inout ()
-	) {
-		if subviews.count != 1 {
-			fatalError("Only works with a single subview")
-		}
-
-		print("marquee proposal \(proposal)")
-
-		// Position the subview
-		subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading, proposal: proposal)
+		subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.minY), anchor: .topLeading, proposal: .unspecified)
 	}
 }
 
@@ -87,7 +50,7 @@ private struct HorizontalMarqueeContainer: View {
 	var view: RenderedView
 
 	var body: some View {
-		HorizontalMarqueeLayout {
+		MarqueeLayout {
 			// If the content doesn't fit in the container, then animate.
 			// Otherwise render the content.
 			if view.width > size.width {
@@ -122,7 +85,7 @@ private struct HorizontalMarqueeContainer: View {
 				view.image
 			}
 		}.ignoresSafeArea()
-		 .layerEffect(MarqueeShaderLibrary.marqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.width > size.width)
+		 .layerEffect(MarqueeShaderLibrary.horizontalMarqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.width > size.width)
 		 .onGeometryChange(for: CGSize.self) { proxy in
 			 proxy.size
 		 } action: { newValue in
@@ -139,7 +102,7 @@ private struct VerticalMarqueeContainer: View {
 	var view: RenderedView
 
 	var body: some View {
-		VerticalMarqueeLayout {
+		MarqueeLayout {
 			// If the content doesn't fit in the container, then animate.
 			// Otherwise render the content.
 			if view.height > size.height {
@@ -161,20 +124,18 @@ private struct VerticalMarqueeContainer: View {
 					return ZStack {
 						view.image
 							.offset(y: offset_leading)
-							.containerRelativeFrame([.vertical], alignment: .leading)
 							.clipped()
 
 						view.image
 							.offset(y: offset_trailing)
-							.containerRelativeFrame([.vertical], alignment: .leading)
 							.clipped()
 					}
 				}
 			} else {
 				view.image
 			}
-		}.layerEffect(MarqueeShaderLibrary.marqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.height > size.height)
-			.onGeometryChange(for: CGSize.self) { proxy in
+		}.layerEffect(MarqueeShaderLibrary.verticalMarqueeEffect(.boundingRect), maxSampleOffset: .zero, isEnabled: view.height > size.height)
+		 .onGeometryChange(for: CGSize.self) { proxy in
 				proxy.size
 			} action: { newValue in
 				size = newValue
@@ -188,12 +149,14 @@ private struct RenderedView: Equatable {
 	let height: CGFloat
 	let width: CGFloat
 
-	init<Content: View>(displayScale: CGFloat, @ViewBuilder _ content: () -> Content) {
+	init?<Content: View>(displayScale: CGFloat, @ViewBuilder _ content: () -> Content) {
 		let renderer = ImageRenderer(content: content())
 		renderer.scale = displayScale
 		guard let cgImage = renderer.cgImage else {
-			fatalError("cant make image")
+			print("Unable to render image from content")
+			return nil
 		}
+		print("rendering")
 		self.image = Image(decorative: cgImage, scale: displayScale)
 		self.height = CGFloat(cgImage.height) / displayScale
 		self.width = CGFloat(cgImage.width) / displayScale
@@ -219,16 +182,16 @@ public struct Marquee<Content: View>: View {
 	}
 
 	public var body: some View {
-		if self.orientation == .horizontal {
-			HorizontalMarqueeContainer(speed: speed, spacing: spacing, view: RenderedView(displayScale: displayScale) {
-				content()
-			})
-			.clipped()
+		if let view = RenderedView(displayScale: displayScale, content) {
+			if self.orientation == .horizontal {
+				HorizontalMarqueeContainer(speed: speed, spacing: spacing, view: view)
+					.clipped()
+			} else {
+				VerticalMarqueeContainer(speed: speed, spacing: spacing, view: view)
+					.clipped()
+			}
 		} else {
-			VerticalMarqueeContainer(speed: speed, spacing: spacing, view: RenderedView(displayScale: displayScale) {
-				content()
-			})
-			.clipped()
+			content()
 		}
 	}
 }
