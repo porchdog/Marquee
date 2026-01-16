@@ -2,7 +2,7 @@
 //  Marquee.swift
 //
 //  Created by Porchdog Software on 12/30/25.
-//  Copyright (c) 2025 Porchdog Software. All rights reserved.
+//  Copyright (c) 2025-2026 Porchdog Software. All rights reserved.
 //
 
 import SwiftUI
@@ -15,7 +15,11 @@ private struct MarqueeLayout: Layout {
 		subviews: Subviews,
 		cache: inout ()
 	) -> CGSize {
-		if subviews.count != 1 {
+		if subviews.count == 0 {
+			return .zero
+		}
+
+		if subviews.count > 1 {
 			fatalError("Must have one subview")
 		}
 
@@ -37,7 +41,11 @@ private struct MarqueeLayout: Layout {
 		subviews: Subviews,
 		cache: inout ()
 	) {
-		if subviews.count != 1 {
+		if subviews.count == 0 {
+			return
+		}
+
+		if subviews.count > 1 {
 			fatalError("Must have one subview")
 		}
 
@@ -90,6 +98,7 @@ private struct HorizontalMarqueeContainer<Content: View>: View {
 	}
 
 	@State private var containerSize: CGSize = .zero
+	@State private var contentSize: CGSize = .zero
 	@State private var start: Date = Date()
 	var spacing: Double
 	var speed: Double
@@ -102,23 +111,31 @@ private struct HorizontalMarqueeContainer<Content: View>: View {
 	var body: some View {
 		// If the content doesn't fit in the container, then animate.
 		// Otherwise render the content.
-		Measure(content: content) { contentSize in
-			MarqueeLayout(contentSize: contentSize, spacing: spacing) {
-				if contentSize.width > containerSize.width {
-					TimelineView(.animation) { context in
-						MarqueeStackLayout(size: contentSize, spacing: spacing, offset: offset(for: context.date), reset: {
-							start = Date()
-						}) {
-							content
-								.offset(x: offset(for: context.date))
-							content
-								.offset(x: offset(for: context.date))
-						}
-					}.clipped()
-					 .layerEffect(MarqueeShaderLibrary.horizontalMarqueeEffect(.boundingRect), maxSampleOffset: .zero)
-				} else {
-					content
-				}
+		MarqueeLayout(contentSize: contentSize, spacing: spacing) {
+			if contentSize.width > containerSize.width {
+				TimelineView(.animation) { context in
+					MarqueeStackLayout(size: contentSize, spacing: spacing, offset: offset(for: context.date), reset: {
+						start = Date()
+					}) {
+						content
+							.offset(x: offset(for: context.date))
+							.onGeometryChange(for: CGSize.self) { geometry in
+								geometry.size
+							} action: { newValue in
+								contentSize = newValue
+							}
+						content
+							.offset(x: offset(for: context.date))
+					}
+				}.clipped()
+					.layerEffect(MarqueeShaderLibrary.horizontalMarqueeEffect(.boundingRect), maxSampleOffset: .zero)
+			} else {
+				content
+					.onGeometryChange(for: CGSize.self) { geometry in
+						geometry.size
+					} action: { newValue in
+						contentSize = newValue
+					}
 			}
 		}.onGeometryChange(for: CGSize.self) { proxy in
 			proxy.size
@@ -173,6 +190,7 @@ private struct VerticalMarqueeContainer<Content: View>: View {
 	}
 
 	@State private var containerSize: CGSize = .zero
+	@State private var contentSize: CGSize = .zero
 	@State private var start: Date = Date()
 	var spacing: Double
 	var speed: Double
@@ -185,49 +203,37 @@ private struct VerticalMarqueeContainer<Content: View>: View {
 	var body: some View {
 		// If the content doesn't fit in the container, then animate.
 		// Otherwise render the content.
-		Measure(content: content) { contentSize in
-			MarqueeLayout(contentSize: contentSize, spacing: spacing) {
-				if contentSize.height > containerSize.height {
-					TimelineView(.animation) { context in
-						MarqueeStackLayout(size: contentSize, spacing: spacing, offset: offset(for: context.date), reset: {
-							start = Date()
-						}) {
-							content
-								.offset(y: offset(for: context.date))
-							content
-								.offset(y: offset(for: context.date))
-						}
-					}.clipped()
-						.layerEffect(MarqueeShaderLibrary.verticalMarqueeEffect(.boundingRect), maxSampleOffset: .zero)
-				} else {
-					content
-				}
+		MarqueeLayout(contentSize: contentSize, spacing: spacing) {
+			if contentSize.height > containerSize.height {
+				TimelineView(.animation) { context in
+					MarqueeStackLayout(size: contentSize, spacing: spacing, offset: offset(for: context.date), reset: {
+						start = Date()
+					}) {
+						content
+							.offset(y: offset(for: context.date))
+							.onGeometryChange(for: CGSize.self) { geometry in
+								geometry.size
+							} action: { newValue in
+								contentSize = newValue
+							}
+						content
+							.offset(y: offset(for: context.date))
+					}
+				}.clipped()
+				//	.layerEffect(MarqueeShaderLibrary.verticalMarqueeEffect(.boundingRect), maxSampleOffset: .zero)
+			} else {
+				content
+					.onGeometryChange(for: CGSize.self) { geometry in
+						geometry.size
+					} action: { newValue in
+						contentSize = newValue
+					}
 			}
 		}.onGeometryChange(for: CGSize.self) { proxy in
 			proxy.size
 		} action: { newValue in
 			containerSize = newValue
 		}
-	}
-}
-
-private struct Measure<Content: View, Child: View>: View {
-	@Environment(\.displayScale) private var displayScale
-	var content: Content
-	@ViewBuilder var child: (CGSize) -> Child
-
-	var body: some View {
-		child(measure)
-	}
-
-	var measure: CGSize {
-		let renderer = ImageRenderer(content: content)
-		renderer.scale = displayScale
-		guard let cgImage = renderer.cgImage else {
-			print("Unable to render image from content")
-			return .zero
-		}
-		return CGSize(width: Double(cgImage.width) / displayScale, height: Double(cgImage.height) / displayScale)
 	}
 }
 
@@ -251,10 +257,10 @@ public struct Marquee<Content: View>: View {
 	public var body: some View {
 		if self.orientation == .horizontal {
 			HorizontalMarqueeContainer(spacing: spacing, speed: speed, content: content)
-			.clipped()
+				.clipped()
 		} else {
 			VerticalMarqueeContainer(spacing: spacing, speed: speed, content: content)
-			.clipped()
+				.clipped()
 		}
 	}
 }
